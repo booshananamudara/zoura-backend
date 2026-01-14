@@ -21,6 +21,7 @@ const auth_module_1 = require("./modules/auth/auth.module");
 const commerce_module_1 = require("./modules/commerce/commerce.module");
 const social_module_1 = require("./modules/social/social.module");
 const admin_module_1 = require("./modules/admin/admin.module");
+const cart_module_1 = require("./modules/cart/cart.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -42,6 +43,7 @@ exports.AppModule = AppModule = __decorate([
             commerce_module_1.CommerceModule,
             social_module_1.SocialModule,
             admin_module_1.AdminModule,
+            cart_module_1.CartModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

@@ -9,6 +9,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CommerceModule } from './modules/commerce/commerce.module';
 import { SocialModule } from './modules/social/social.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { CartModule } from './modules/cart/cart.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { AdminModule } from './modules/admin/admin.module';
     CommerceModule,
     SocialModule,
     AdminModule,
+    CartModule,
   ],
   controllers: [AppController],
   providers: [AppService],

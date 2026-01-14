@@ -12,7 +12,8 @@ Complete reference for all API endpoints in the Zoura platform.
    - [Vendor Auth](#vendor-authentication)
    - [Admin Auth](#admin-authentication)
 2. [Product APIs](#product-apis)
-3. [Admin Management APIs](#admin-management-apis)
+3. [Shopping Cart APIs](#shopping-cart-apis)
+4. [Admin Management APIs](#admin-management-apis)
 
 ---
 
@@ -431,6 +432,225 @@ Authorization: Bearer {vendor_access_token}
 ```bash
 curl -X GET http://localhost:8080/products/my-products \
   -H "Authorization: Bearer YOUR_VENDOR_TOKEN"
+```
+
+---
+
+## Shopping Cart APIs
+
+### Add Item to Cart
+**Endpoint:** `POST /cart`  
+**Access:** Protected (User only)  
+**Description:** Add a product to user's cart or update quantity if already exists
+
+**Headers:**
+```
+Authorization: Bearer {user_access_token}
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "productId": "uuid",
+  "quantity": 2
+}
+```
+
+**Response (201):**
+```json
+{
+  "message": "Item added to cart successfully",
+  "cart": {
+    "id": "uuid",
+    "total_price": 299.98,
+    "items": [
+      {
+        "id": "uuid",
+        "quantity": 2,
+        "price_at_add": 149.99,
+        "product": {
+          "id": "uuid",
+          "name": "Samsung Galaxy S24",
+          "price": 149.99,
+          "stock": 48,
+          "vendor": {
+            "shop_name": "Jane's Electronics"
+          }
+        }
+      }
+    ],
+    "created_at": "2026-01-14T10:00:00Z",
+    "updated_at": "2026-01-14T10:05:00Z"
+  }
+}
+```
+
+**cURL Example:**
+```bash
+curl -X POST http://localhost:8080/cart \
+  -H "Authorization: Bearer YOUR_USER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "productId": "PRODUCT_UUID",
+    "quantity": 2
+  }'
+```
+
+---
+
+### Get User Cart
+**Endpoint:** `GET /cart`  
+**Access:** Protected (User only)  
+**Description:** Get current user's cart with all items and total price
+
+**Headers:**
+```
+Authorization: Bearer {user_access_token}
+```
+
+**Response (200):**
+```json
+{
+  "id": "uuid",
+  "total_price": 449.97,
+  "items": [
+    {
+      "id": "uuid",
+      "quantity": 2,
+      "price_at_add": 149.99,
+      "product": {
+        "id": "uuid",
+        "name": "Samsung Galaxy S24",
+        "price": 149.99,
+        "stock": 48,
+        "images": ["url1", "url2"],
+        "vendor": {
+          "id": "uuid",
+          "shop_name": "Jane's Electronics"
+        }
+      }
+    },
+    {
+      "id": "uuid",
+      "quantity": 1,
+      "price_at_add": 149.99,
+      "product": {
+        "id": "uuid",
+        "name": "iPhone 15 Pro",
+        "price": 149.99,
+        "stock": 29
+      }
+    }
+  ],
+  "created_at": "2026-01-14T10:00:00Z",
+  "updated_at": "2026-01-14T10:10:00Z"
+}
+```
+
+**cURL Example:**
+```bash
+curl -X GET http://localhost:8080/cart \
+  -H "Authorization: Bearer YOUR_USER_TOKEN"
+```
+
+---
+
+### Update Cart Item Quantity
+**Endpoint:** `PATCH /cart/:itemId`  
+**Access:** Protected (User only)  
+**Description:** Update the quantity of a specific cart item
+
+**Headers:**
+```
+Authorization: Bearer {user_access_token}
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "quantity": 5
+}
+```
+
+**Response (200):**
+```json
+{
+  "message": "Cart item updated successfully",
+  "cart": {
+    "id": "uuid",
+    "total_price": 749.95,
+    "items": [...],
+    "updated_at": "2026-01-14T10:15:00Z"
+  }
+}
+```
+
+**cURL Example:**
+```bash
+curl -X PATCH http://localhost:8080/cart/CART_ITEM_UUID \
+  -H "Authorization: Bearer YOUR_USER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quantity": 5
+  }'
+```
+
+---
+
+### Remove Item from Cart
+**Endpoint:** `DELETE /cart/:itemId`  
+**Access:** Protected (User only)  
+**Description:** Remove a specific item from the cart
+
+**Headers:**
+```
+Authorization: Bearer {user_access_token}
+```
+
+**Response (200):**
+```json
+{
+  "message": "Item removed from cart",
+  "cart": {
+    "id": "uuid",
+    "total_price": 149.99,
+    "items": [...],
+    "updated_at": "2026-01-14T10:20:00Z"
+  }
+}
+```
+
+**cURL Example:**
+```bash
+curl -X DELETE http://localhost:8080/cart/CART_ITEM_UUID \
+  -H "Authorization: Bearer YOUR_USER_TOKEN"
+```
+
+---
+
+### Clear Cart
+**Endpoint:** `DELETE /cart`  
+**Access:** Protected (User only)  
+**Description:** Remove all items from the cart
+
+**Headers:**
+```
+Authorization: Bearer {user_access_token}
+```
+
+**Response (200):**
+```json
+{
+  "message": "Cart cleared successfully"
+}
+```
+
+**cURL Example:**
+```bash
+curl -X DELETE http://localhost:8080/cart \
+  -H "Authorization: Bearer YOUR_USER_TOKEN"
 ```
 
 ---
