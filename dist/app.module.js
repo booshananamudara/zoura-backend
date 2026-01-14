@@ -22,6 +22,7 @@ const commerce_module_1 = require("./modules/commerce/commerce.module");
 const social_module_1 = require("./modules/social/social.module");
 const admin_module_1 = require("./modules/admin/admin.module");
 const cart_module_1 = require("./modules/cart/cart.module");
+const orders_module_1 = require("./modules/orders/orders.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -44,6 +45,7 @@ exports.AppModule = AppModule = __decorate([
             social_module_1.SocialModule,
             admin_module_1.AdminModule,
             cart_module_1.CartModule,
+            orders_module_1.OrdersModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
