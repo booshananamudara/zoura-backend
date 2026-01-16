@@ -19,11 +19,15 @@ const create_vendor_dto_1 = require("../../dto/create-vendor.dto");
 const jwt_auth_guard_1 = require("./guards/jwt-auth.guard");
 const roles_guard_1 = require("./guards/roles.guard");
 const roles_decorator_1 = require("./decorators/roles.decorator");
+const current_user_decorator_1 = require("./decorators/current-user.decorator");
 const enums_1 = require("../../common/enums");
 let VendorsController = class VendorsController {
     vendorsService;
     constructor(vendorsService) {
         this.vendorsService = vendorsService;
+    }
+    async getDashboardStats(user) {
+        return this.vendorsService.getDashboardStats(user.id);
     }
     async create(createVendorDto) {
         const vendor = await this.vendorsService.create(createVendorDto);
@@ -47,6 +51,14 @@ let VendorsController = class VendorsController {
     }
 };
 exports.VendorsController = VendorsController;
+__decorate([
+    (0, common_1.Get)('stats'),
+    (0, roles_decorator_1.Roles)(enums_1.UserRole.VENDOR),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], VendorsController.prototype, "getDashboardStats", null);
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),

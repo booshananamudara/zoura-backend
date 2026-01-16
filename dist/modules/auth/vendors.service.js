@@ -18,10 +18,19 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const vendor_entity_1 = require("./entities/vendor.entity");
 const enums_1 = require("../../common/enums");
+const product_entity_1 = require("../commerce/entities/product.entity");
+const product_variant_entity_1 = require("../commerce/entities/product-variant.entity");
+const order_item_entity_1 = require("../orders/entities/order-item.entity");
 let VendorsService = class VendorsService {
     vendorRepository;
-    constructor(vendorRepository) {
+    productRepository;
+    variantRepository;
+    orderItemRepository;
+    constructor(vendorRepository, productRepository, variantRepository, orderItemRepository) {
         this.vendorRepository = vendorRepository;
+        this.productRepository = productRepository;
+        this.variantRepository = variantRepository;
+        this.orderItemRepository = orderItemRepository;
     }
     async create(createVendorDto) {
         const vendor = this.vendorRepository.create({
@@ -53,11 +62,68 @@ let VendorsService = class VendorsService {
         vendor.approval_status = enums_1.ApprovalStatus.APPROVED;
         return this.vendorRepository.save(vendor);
     }
+    async getDashboardStats(vendorId) {
+        const vendor = await this.findOne(vendorId);
+        const revenueResult = await this.orderItemRepository
+            .createQueryBuilder('orderItem')
+            .innerJoin('orderItem.product', 'product')
+            .innerJoin('product.vendor', 'vendor')
+            .where('vendor.id = :vendorId', { vendorId })
+            .select('SUM(orderItem.price_at_purchase * orderItem.quantity)', 'total')
+            .getRawOne();
+        const totalRevenue = parseFloat(revenueResult?.total || '0');
+        const ordersResult = await this.orderItemRepository
+            .createQueryBuilder('orderItem')
+            .innerJoin('orderItem.product', 'product')
+            .innerJoin('product.vendor', 'vendor')
+            .innerJoin('orderItem.order', 'order')
+            .where('vendor.id = :vendorId', { vendorId })
+            .select('COUNT(DISTINCT order.id)', 'count')
+            .getRawOne();
+        const totalOrders = parseInt(ordersResult?.count || '0', 10);
+        const totalProducts = await this.productRepository.count({
+            where: {
+                vendor: { id: vendorId },
+                approval_status: enums_1.ApprovalStatus.APPROVED,
+            },
+        });
+        const lowStockVariants = await this.variantRepository
+            .createQueryBuilder('variant')
+            .innerJoinAndSelect('variant.product', 'product')
+            .innerJoin('product.vendor', 'vendor')
+            .where('vendor.id = :vendorId', { vendorId })
+            .andWhere('variant.stock < :threshold', { threshold: 5 })
+            .orderBy('variant.stock', 'ASC')
+            .take(5)
+            .getMany();
+        const lowStockItems = lowStockVariants.map(variant => ({
+            id: variant.id,
+            sku: variant.sku,
+            color: variant.color,
+            size: variant.size,
+            stock: variant.stock,
+            productName: variant.product?.name || 'Unknown Product',
+            productId: variant.product?.id || '',
+        }));
+        return {
+            totalRevenue,
+            totalOrders,
+            totalProducts,
+            lowStockItems,
+            shopName: vendor.shop_name,
+        };
+    }
 };
 exports.VendorsService = VendorsService;
 exports.VendorsService = VendorsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(vendor_entity_1.Vendor)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __param(1, (0, typeorm_1.InjectRepository)(product_entity_1.Product)),
+    __param(2, (0, typeorm_1.InjectRepository)(product_variant_entity_1.ProductVariant)),
+    __param(3, (0, typeorm_1.InjectRepository)(order_item_entity_1.OrderItem)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository])
 ], VendorsService);
 //# sourceMappingURL=vendors.service.js.map

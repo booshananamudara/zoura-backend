@@ -2,6 +2,7 @@ import { AdminService } from './admin.service';
 export declare class AdminController {
     private readonly adminService;
     constructor(adminService: AdminService);
+    getDashboardStats(): Promise<import("./admin.service").DashboardStats>;
     approveVendor(id: string): Promise<{
         message: string;
         vendor: import("../auth/entities").Vendor;

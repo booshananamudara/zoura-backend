@@ -24,9 +24,14 @@ import { AdminAuthService } from './admin-auth.service';
 import { VendorsController } from './vendors.controller';
 import { VendorsService } from './vendors.service';
 
+// Entities for vendor stats
+import { Product } from '../commerce/entities/product.entity';
+import { ProductVariant } from '../commerce/entities/product-variant.entity';
+import { OrderItem } from '../orders/entities/order-item.entity';
+
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Vendor]),
+    TypeOrmModule.forFeature([User, Vendor, Product, ProductVariant, OrderItem]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

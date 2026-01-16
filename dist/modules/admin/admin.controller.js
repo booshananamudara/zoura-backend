@@ -24,6 +24,9 @@ let AdminController = class AdminController {
     constructor(adminService) {
         this.adminService = adminService;
     }
+    async getDashboardStats() {
+        return this.adminService.getDashboardStats();
+    }
     async approveVendor(id) {
         const vendor = await this.adminService.approveVendor(id);
         return {
@@ -59,6 +62,12 @@ let AdminController = class AdminController {
     }
 };
 exports.AdminController = AdminController;
+__decorate([
+    (0, common_1.Get)('stats'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getDashboardStats", null);
 __decorate([
     (0, common_1.Patch)('vendors/:id/approve'),
     __param(0, (0, common_1.Param)('id')),

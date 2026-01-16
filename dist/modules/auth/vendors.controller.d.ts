@@ -3,6 +3,7 @@ import { CreateVendorDto } from '../../dto/create-vendor.dto';
 export declare class VendorsController {
     private readonly vendorsService;
     constructor(vendorsService: VendorsService);
+    getDashboardStats(user: any): Promise<import("./vendors.service").VendorDashboardStats>;
     create(createVendorDto: CreateVendorDto): Promise<{
         message: string;
         vendor: import("./entities").Vendor;

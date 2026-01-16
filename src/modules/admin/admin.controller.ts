@@ -11,6 +11,11 @@ import { UserRole } from '@/common/enums';
 export class AdminController {
     constructor(private readonly adminService: AdminService) { }
 
+    @Get('stats')
+    async getDashboardStats() {
+        return this.adminService.getDashboardStats();
+    }
+
     @Patch('vendors/:id/approve')
     async approveVendor(@Param('id') id: string) {
         const vendor = await this.adminService.approveVendor(id);
@@ -58,3 +63,4 @@ export class AdminController {
         };
     }
 }
+

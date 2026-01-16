@@ -13,12 +13,14 @@ const admin_controller_1 = require("./admin.controller");
 const admin_service_1 = require("./admin.service");
 const vendor_entity_1 = require("../auth/entities/vendor.entity");
 const product_entity_1 = require("../commerce/entities/product.entity");
+const product_variant_entity_1 = require("../commerce/entities/product-variant.entity");
+const order_entity_1 = require("../orders/entities/order.entity");
 let AdminModule = class AdminModule {
 };
 exports.AdminModule = AdminModule;
 exports.AdminModule = AdminModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([vendor_entity_1.Vendor, product_entity_1.Product])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([vendor_entity_1.Vendor, product_entity_1.Product, product_variant_entity_1.ProductVariant, order_entity_1.Order])],
         controllers: [admin_controller_1.AdminController],
         providers: [admin_service_1.AdminService],
         exports: [admin_service_1.AdminService],

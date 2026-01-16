@@ -4,6 +4,7 @@ import { CreateVendorDto } from '../../dto/create-vendor.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
+import { CurrentUser } from './decorators/current-user.decorator';
 import { UserRole } from '@/common/enums';
 
 @Controller('vendors')
@@ -11,6 +12,16 @@ import { UserRole } from '@/common/enums';
 @Roles(UserRole.ADMIN)
 export class VendorsController {
     constructor(private readonly vendorsService: VendorsService) { }
+
+    /**
+     * Get dashboard stats for the logged-in vendor
+     * Overrides class-level ADMIN role to allow VENDOR access
+     */
+    @Get('stats')
+    @Roles(UserRole.VENDOR)
+    async getDashboardStats(@CurrentUser() user: any) {
+        return this.vendorsService.getDashboardStats(user.id);
+    }
 
     @Post()
     async create(@Body() createVendorDto: CreateVendorDto) {

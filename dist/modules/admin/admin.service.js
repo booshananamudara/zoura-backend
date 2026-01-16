@@ -18,13 +18,49 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const vendor_entity_1 = require("../auth/entities/vendor.entity");
 const product_entity_1 = require("../commerce/entities/product.entity");
+const product_variant_entity_1 = require("../commerce/entities/product-variant.entity");
+const order_entity_1 = require("../orders/entities/order.entity");
 const enums_1 = require("../../common/enums");
 let AdminService = class AdminService {
     vendorRepository;
     productRepository;
-    constructor(vendorRepository, productRepository) {
+    variantRepository;
+    orderRepository;
+    constructor(vendorRepository, productRepository, variantRepository, orderRepository) {
         this.vendorRepository = vendorRepository;
         this.productRepository = productRepository;
+        this.variantRepository = variantRepository;
+        this.orderRepository = orderRepository;
+    }
+    async getDashboardStats() {
+        const revenueResult = await this.orderRepository
+            .createQueryBuilder('order')
+            .select('SUM(order.total_amount)', 'total')
+            .getRawOne();
+        const totalRevenue = parseFloat(revenueResult?.total || '0');
+        const totalOrders = await this.orderRepository.count();
+        const totalVendors = await this.vendorRepository.count();
+        const lowStockVariants = await this.variantRepository.find({
+            where: { stock: (0, typeorm_2.LessThan)(5) },
+            relations: ['product'],
+            order: { stock: 'ASC' },
+            take: 5,
+        });
+        const lowStockItems = lowStockVariants.map(variant => ({
+            id: variant.id,
+            sku: variant.sku,
+            color: variant.color,
+            size: variant.size,
+            stock: variant.stock,
+            productName: variant.product?.name || 'Unknown Product',
+            productId: variant.product?.id || '',
+        }));
+        return {
+            totalRevenue,
+            totalOrders,
+            totalVendors,
+            lowStockItems,
+        };
     }
     async approveVendor(id) {
         const vendor = await this.vendorRepository.findOne({
@@ -96,7 +132,11 @@ exports.AdminService = AdminService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(vendor_entity_1.Vendor)),
     __param(1, (0, typeorm_1.InjectRepository)(product_entity_1.Product)),
+    __param(2, (0, typeorm_1.InjectRepository)(product_variant_entity_1.ProductVariant)),
+    __param(3, (0, typeorm_1.InjectRepository)(order_entity_1.Order)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository])
 ], AdminService);
 //# sourceMappingURL=admin.service.js.map

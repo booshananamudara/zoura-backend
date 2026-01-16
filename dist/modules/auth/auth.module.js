@@ -24,13 +24,16 @@ const admin_auth_controller_1 = require("./admin-auth.controller");
 const admin_auth_service_1 = require("./admin-auth.service");
 const vendors_controller_1 = require("./vendors.controller");
 const vendors_service_1 = require("./vendors.service");
+const product_entity_1 = require("../commerce/entities/product.entity");
+const product_variant_entity_1 = require("../commerce/entities/product-variant.entity");
+const order_item_entity_1 = require("../orders/entities/order-item.entity");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, vendor_entity_1.Vendor]),
+            typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, vendor_entity_1.Vendor, product_entity_1.Product, product_variant_entity_1.ProductVariant, order_item_entity_1.OrderItem]),
             passport_1.PassportModule,
             jwt_1.JwtModule.registerAsync({
                 imports: [config_1.ConfigModule],
