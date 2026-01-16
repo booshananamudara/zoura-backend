@@ -11,13 +11,15 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateProductDto = void 0;
 const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
+const create_variant_dto_1 = require("./create-variant.dto");
 class CreateProductDto {
     name;
     description;
     price;
-    stock;
     category;
-    images;
+    attributes;
+    variants;
 }
 exports.CreateProductDto = CreateProductDto;
 __decorate([
@@ -25,27 +27,31 @@ __decorate([
     __metadata("design:type", String)
 ], CreateProductDto.prototype, "name", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateProductDto.prototype, "description", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(0),
+    (0, class_transformer_1.Transform)(({ value }) => parseFloat(value)),
     __metadata("design:type", Number)
 ], CreateProductDto.prototype, "price", void 0);
 __decorate([
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.Min)(0),
-    __metadata("design:type", Number)
-], CreateProductDto.prototype, "stock", void 0);
-__decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateProductDto.prototype, "category", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsObject)(),
+    __metadata("design:type", Object)
+], CreateProductDto.prototype, "attributes", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsArray)(),
-    (0, class_validator_1.IsString)({ each: true }),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => create_variant_dto_1.CreateVariantDto),
     __metadata("design:type", Array)
-], CreateProductDto.prototype, "images", void 0);
+], CreateProductDto.prototype, "variants", void 0);
 //# sourceMappingURL=create-product.dto.js.map

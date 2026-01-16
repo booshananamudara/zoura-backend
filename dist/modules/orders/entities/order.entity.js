@@ -20,6 +20,8 @@ let Order = class Order {
     items;
     total_amount;
     status;
+    shipping_address;
+    payment_method;
     created_at;
     updated_at;
 };
@@ -29,7 +31,7 @@ __decorate([
     __metadata("design:type", String)
 ], Order.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => user_entity_1.User),
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, { eager: true }),
     __metadata("design:type", user_entity_1.User)
 ], Order.prototype, "user", void 0);
 __decorate([
@@ -48,6 +50,14 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], Order.prototype, "status", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    __metadata("design:type", Object)
+], Order.prototype, "shipping_address", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 50, default: 'cash_on_delivery' }),
+    __metadata("design:type", String)
+], Order.prototype, "payment_method", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

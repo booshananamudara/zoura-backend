@@ -12,15 +12,18 @@ const typeorm_1 = require("@nestjs/typeorm");
 const products_controller_1 = require("./products.controller");
 const products_service_1 = require("./products.service");
 const product_entity_1 = require("./entities/product.entity");
+const product_variant_entity_1 = require("./entities/product-variant.entity");
 const vendor_entity_1 = require("../auth/entities/vendor.entity");
-const order_entity_1 = require("./entities/order.entity");
-const order_item_entity_1 = require("./entities/order-item.entity");
+const cloudinary_1 = require("../../common/cloudinary");
 let CommerceModule = class CommerceModule {
 };
 exports.CommerceModule = CommerceModule;
 exports.CommerceModule = CommerceModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([product_entity_1.Product, vendor_entity_1.Vendor, order_entity_1.Order, order_item_entity_1.OrderItem])],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([product_entity_1.Product, product_variant_entity_1.ProductVariant, vendor_entity_1.Vendor]),
+            cloudinary_1.CloudinaryModule,
+        ],
         controllers: [products_controller_1.ProductsController],
         providers: [products_service_1.ProductsService],
         exports: [products_service_1.ProductsService],

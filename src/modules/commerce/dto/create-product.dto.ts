@@ -1,25 +1,34 @@
-import { IsString, IsNumber, Min, IsOptional, IsArray } from 'class-validator';
+import { IsString, IsNumber, Min, IsOptional, IsArray, IsObject, ValidateNested } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
+import { CreateVariantDto } from './create-variant.dto';
 
 export class CreateProductDto {
     @IsString()
     name: string;
 
+    @IsOptional()
     @IsString()
-    description: string;
+    description?: string;
 
     @IsNumber()
     @Min(0)
+    @Transform(({ value }) => parseFloat(value))
     price: number;
 
-    @IsNumber()
-    @Min(0)
-    stock: number;
-
+    @IsOptional()
     @IsString()
-    category: string;
+    category?: string;
+
+    @IsOptional()
+    @IsObject()
+    attributes?: Record<string, any>;
 
     @IsOptional()
     @IsArray()
-    @IsString({ each: true })
-    images?: string[];
+    @ValidateNested({ each: true })
+    @Type(() => CreateVariantDto)
+    variants?: CreateVariantDto[];
+
+    // Images are handled via file upload, not in DTO
 }
+

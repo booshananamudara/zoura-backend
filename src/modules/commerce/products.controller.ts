@@ -7,27 +7,62 @@ import {
     UseGuards,
     Request,
     Query,
+    UseInterceptors,
+    UploadedFiles,
+    BadRequestException,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../../common/enums';
+import { CloudinaryService } from '../../common/cloudinary';
 
 @Controller('products')
 export class ProductsController {
-    constructor(private readonly productsService: ProductsService) { }
+    constructor(
+        private readonly productsService: ProductsService,
+        private readonly cloudinaryService: CloudinaryService,
+    ) { }
 
+    /**
+     * Create product with image uploads
+     * Accepts multipart form data with:
+     * - images: array of image files
+     * - data: JSON string containing product details and variants
+     */
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.VENDOR)
-    async create(@Body() createProductDto: CreateProductDto, @Request() req) {
-        // req.user contains { id, email, role: 'VENDOR' }
+    @UseInterceptors(FilesInterceptor('images', 10)) // Max 10 images
+    async create(
+        @UploadedFiles() files: Express.Multer.File[],
+        @Body('data') dataString: string,
+        @Request() req,
+    ) {
+        // Parse the JSON data from form
+        let productData: CreateProductDto;
+        try {
+            productData = JSON.parse(dataString || '{}');
+        } catch (e) {
+            throw new BadRequestException('Invalid product data format');
+        }
+
+        // Upload images to Cloudinary if provided
+        let imageUrls: string[] = [];
+        if (files && files.length > 0) {
+            imageUrls = await this.cloudinaryService.uploadImages(files);
+        }
+
+        // Create product with images and variants
         const product = await this.productsService.create(
-            createProductDto,
+            productData,
             req.user.id,
+            imageUrls,
         );
+
         return {
             message: 'Product created successfully and submitted for approval',
             product,
@@ -66,3 +101,4 @@ export class ProductsController {
         return this.productsService.findOne(id);
     }
 }
+

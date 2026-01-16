@@ -17,16 +17,19 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const product_entity_1 = require("./entities/product.entity");
+const product_variant_entity_1 = require("./entities/product-variant.entity");
 const vendor_entity_1 = require("../auth/entities/vendor.entity");
 const enums_1 = require("../../common/enums");
 let ProductsService = class ProductsService {
     productRepository;
+    variantRepository;
     vendorRepository;
-    constructor(productRepository, vendorRepository) {
+    constructor(productRepository, variantRepository, vendorRepository) {
         this.productRepository = productRepository;
+        this.variantRepository = variantRepository;
         this.vendorRepository = vendorRepository;
     }
-    async create(createProductDto, vendorId) {
+    async create(createProductDto, vendorId, imageUrls = []) {
         const vendor = await this.vendorRepository.findOne({
             where: { id: vendorId },
         });
@@ -38,14 +41,36 @@ let ProductsService = class ProductsService {
         }
         const product = this.productRepository.create({
             name: createProductDto.name,
+            description: createProductDto.description,
             price: createProductDto.price,
-            stock: createProductDto.stock,
-            images: createProductDto.images || [],
+            images: imageUrls,
+            attributes: createProductDto.attributes || {},
             is_zoura_mall: false,
             approval_status: enums_1.ApprovalStatus.PENDING,
             vendor: vendor,
         });
         const savedProduct = await this.productRepository.save(product);
+        if (createProductDto.variants && createProductDto.variants.length > 0) {
+            const variants = createProductDto.variants.map((variantDto) => this.variantRepository.create({
+                product: savedProduct,
+                color: variantDto.color,
+                size: variantDto.size,
+                sku: variantDto.sku,
+                stock: variantDto.stock,
+                price_override: variantDto.price_override,
+            }));
+            await this.variantRepository.save(variants);
+            savedProduct.variants = variants;
+        }
+        else {
+            const defaultVariant = this.variantRepository.create({
+                product: savedProduct,
+                sku: `${savedProduct.id.substring(0, 8)}-DEFAULT`,
+                stock: 0,
+            });
+            await this.variantRepository.save(defaultVariant);
+            savedProduct.variants = [defaultVariant];
+        }
         return savedProduct;
     }
     async findAllPublic(query) {
@@ -61,7 +86,7 @@ let ProductsService = class ProductsService {
         }
         const [products, total] = await this.productRepository.findAndCount({
             where,
-            relations: ['vendor'],
+            relations: ['vendor', 'variants'],
             take: limit,
             skip: offset,
             order: {
@@ -75,7 +100,7 @@ let ProductsService = class ProductsService {
     }
     async findAll() {
         return this.productRepository.find({
-            relations: ['vendor'],
+            relations: ['vendor', 'variants'],
         });
     }
     async findMyProducts(vendorId) {
@@ -83,7 +108,7 @@ let ProductsService = class ProductsService {
             where: {
                 vendor: { id: vendorId },
             },
-            relations: ['vendor'],
+            relations: ['vendor', 'variants'],
             order: {
                 created_at: 'DESC',
             },
@@ -92,20 +117,32 @@ let ProductsService = class ProductsService {
     async findOne(id) {
         const product = await this.productRepository.findOne({
             where: { id },
-            relations: ['vendor'],
+            relations: ['vendor', 'variants'],
         });
         if (!product) {
             throw new common_1.NotFoundException('Product not found');
         }
         return product;
     }
+    async findVariant(variantId) {
+        const variant = await this.variantRepository.findOne({
+            where: { id: variantId },
+            relations: ['product'],
+        });
+        if (!variant) {
+            throw new common_1.NotFoundException('Product variant not found');
+        }
+        return variant;
+    }
 };
 exports.ProductsService = ProductsService;
 exports.ProductsService = ProductsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(product_entity_1.Product)),
-    __param(1, (0, typeorm_1.InjectRepository)(vendor_entity_1.Vendor)),
+    __param(1, (0, typeorm_1.InjectRepository)(product_variant_entity_1.ProductVariant)),
+    __param(2, (0, typeorm_1.InjectRepository)(vendor_entity_1.Vendor)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository])
 ], ProductsService);
 //# sourceMappingURL=products.service.js.map

@@ -19,13 +19,14 @@ const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const enums_1 = require("../../common/enums");
+const create_order_dto_1 = require("./dto/create-order.dto");
 let OrdersController = class OrdersController {
     ordersService;
     constructor(ordersService) {
         this.ordersService = ordersService;
     }
-    async checkout(req) {
-        const order = await this.ordersService.createOrder(req.user);
+    async checkout(createOrderDto, req) {
+        const order = await this.ordersService.createOrder(req.user, createOrderDto.shippingAddress, createOrderDto.paymentMethod);
         return {
             message: 'Order placed successfully',
             order,
@@ -41,9 +42,10 @@ let OrdersController = class OrdersController {
 exports.OrdersController = OrdersController;
 __decorate([
     (0, common_1.Post)(),
-    __param(0, (0, common_1.Request)()),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [create_order_dto_1.CreateOrderDto, Object]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "checkout", null);
 __decorate([

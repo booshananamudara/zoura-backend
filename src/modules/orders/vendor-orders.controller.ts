@@ -26,7 +26,8 @@ export class VendorOrdersController {
      */
     @Get('my-orders')
     async getMyOrders(@Request() req) {
-        return this.ordersService.getVendorOrders(req.user.vendorId);
+        // For vendors, req.user.id IS the vendor ID
+        return this.ordersService.getVendorOrders(req.user.id);
     }
 
     /**
@@ -40,7 +41,7 @@ export class VendorOrdersController {
         @Request() req,
     ) {
         const order = await this.ordersService.updateVendorOrderStatus(
-            req.user.vendorId,
+            req.user.id,  // For vendors, req.user.id IS the vendor ID
             orderId,
             status,
         );
@@ -50,3 +51,4 @@ export class VendorOrdersController {
         };
     }
 }
+

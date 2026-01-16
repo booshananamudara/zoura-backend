@@ -14,19 +14,33 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductsController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
 const products_service_1 = require("./products.service");
-const create_product_dto_1 = require("./dto/create-product.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const enums_1 = require("../../common/enums");
+const cloudinary_1 = require("../../common/cloudinary");
 let ProductsController = class ProductsController {
     productsService;
-    constructor(productsService) {
+    cloudinaryService;
+    constructor(productsService, cloudinaryService) {
         this.productsService = productsService;
+        this.cloudinaryService = cloudinaryService;
     }
-    async create(createProductDto, req) {
-        const product = await this.productsService.create(createProductDto, req.user.id);
+    async create(files, dataString, req) {
+        let productData;
+        try {
+            productData = JSON.parse(dataString || '{}');
+        }
+        catch (e) {
+            throw new common_1.BadRequestException('Invalid product data format');
+        }
+        let imageUrls = [];
+        if (files && files.length > 0) {
+            imageUrls = await this.cloudinaryService.uploadImages(files);
+        }
+        const product = await this.productsService.create(productData, req.user.id, imageUrls);
         return {
             message: 'Product created successfully and submitted for approval',
             product,
@@ -52,10 +66,12 @@ __decorate([
     (0, common_1.Post)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(enums_1.UserRole.VENDOR),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Request)()),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('images', 10)),
+    __param(0, (0, common_1.UploadedFiles)()),
+    __param(1, (0, common_1.Body)('data')),
+    __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_product_dto_1.CreateProductDto, Object]),
+    __metadata("design:paramtypes", [Array, String, Object]),
     __metadata("design:returntype", Promise)
 ], ProductsController.prototype, "create", null);
 __decorate([
@@ -86,6 +102,7 @@ __decorate([
 ], ProductsController.prototype, "findOne", null);
 exports.ProductsController = ProductsController = __decorate([
     (0, common_1.Controller)('products'),
-    __metadata("design:paramtypes", [products_service_1.ProductsService])
+    __metadata("design:paramtypes", [products_service_1.ProductsService,
+        cloudinary_1.CloudinaryService])
 ], ProductsController);
 //# sourceMappingURL=products.controller.js.map

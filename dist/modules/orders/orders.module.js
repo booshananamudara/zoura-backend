@@ -16,12 +16,13 @@ const order_entity_1 = require("./entities/order.entity");
 const order_item_entity_1 = require("./entities/order-item.entity");
 const cart_entity_1 = require("../cart/entities/cart.entity");
 const product_entity_1 = require("../commerce/entities/product.entity");
+const product_variant_entity_1 = require("../commerce/entities/product-variant.entity");
 let OrdersModule = class OrdersModule {
 };
 exports.OrdersModule = OrdersModule;
 exports.OrdersModule = OrdersModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([order_entity_1.Order, order_item_entity_1.OrderItem, cart_entity_1.Cart, product_entity_1.Product])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([order_entity_1.Order, order_item_entity_1.OrderItem, cart_entity_1.Cart, product_entity_1.Product, product_variant_entity_1.ProductVariant])],
         controllers: [orders_controller_1.OrdersController, vendor_orders_controller_1.VendorOrdersController],
         providers: [orders_service_1.OrdersService],
         exports: [orders_service_1.OrdersService],

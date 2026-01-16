@@ -1,8 +1,9 @@
+import { CreateVariantDto } from './create-variant.dto';
 export declare class CreateProductDto {
     name: string;
-    description: string;
+    description?: string;
     price: number;
-    stock: number;
-    category: string;
-    images?: string[];
+    category?: string;
+    attributes?: Record<string, any>;
+    variants?: CreateVariantDto[];
 }

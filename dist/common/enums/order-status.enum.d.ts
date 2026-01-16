@@ -1,5 +1,5 @@
 export declare enum OrderStatus {
-    PROCESSING = "PROCESSING",
+    PENDING = "PENDING",
     SHIPPED = "SHIPPED",
     DELIVERED = "DELIVERED",
     CANCELLED = "CANCELLED"

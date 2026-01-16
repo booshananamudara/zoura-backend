@@ -26,10 +26,10 @@ let VendorOrdersController = class VendorOrdersController {
         this.ordersService = ordersService;
     }
     async getMyOrders(req) {
-        return this.ordersService.getVendorOrders(req.user.vendorId);
+        return this.ordersService.getVendorOrders(req.user.id);
     }
     async updateOrderStatus(orderId, status, req) {
-        const order = await this.ordersService.updateVendorOrderStatus(req.user.vendorId, orderId, status);
+        const order = await this.ordersService.updateVendorOrderStatus(req.user.id, orderId, status);
         return {
             message: `Order status updated to ${status}`,
             order,

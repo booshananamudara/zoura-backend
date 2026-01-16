@@ -11,12 +11,19 @@ import { User } from '../../auth/entities/user.entity';
 import { OrderItem } from './order-item.entity';
 import { OrderStatus } from '../enums/order-status.enum';
 
+export interface ShippingAddress {
+    street: string;
+    city: string;
+    postalCode: string;
+    phone: string;
+}
+
 @Entity('orders')
 export class Order {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, { eager: true })
     user: User;
 
     @OneToMany(() => OrderItem, (orderItem) => orderItem.order, { cascade: true })
@@ -32,10 +39,15 @@ export class Order {
     })
     status: OrderStatus;
 
+    @Column({ type: 'jsonb', nullable: true })
+    shipping_address: ShippingAddress;
+
+    @Column({ type: 'varchar', length: 50, default: 'cash_on_delivery' })
+    payment_method: string;
+
     @CreateDateColumn()
     created_at: Date;
 
     @UpdateDateColumn()
     updated_at: Date;
 }
-

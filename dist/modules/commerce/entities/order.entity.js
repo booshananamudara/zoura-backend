@@ -36,7 +36,7 @@ __decorate([
     (0, typeorm_1.Column)({
         type: 'enum',
         enum: enums_1.OrderStatus,
-        default: enums_1.OrderStatus.PROCESSING,
+        default: enums_1.OrderStatus.PENDING,
     }),
     __metadata("design:type", String)
 ], Order.prototype, "status", void 0);

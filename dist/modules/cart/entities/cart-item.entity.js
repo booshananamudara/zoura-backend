@@ -13,10 +13,12 @@ exports.CartItem = void 0;
 const typeorm_1 = require("typeorm");
 const cart_entity_1 = require("./cart.entity");
 const product_entity_1 = require("../../commerce/entities/product.entity");
+const product_variant_entity_1 = require("../../commerce/entities/product-variant.entity");
 let CartItem = class CartItem {
     id;
     cart;
     product;
+    variant;
     quantity;
     price_at_add;
     created_at;
@@ -35,6 +37,10 @@ __decorate([
     (0, typeorm_1.ManyToOne)(() => product_entity_1.Product, { eager: true }),
     __metadata("design:type", product_entity_1.Product)
 ], CartItem.prototype, "product", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => product_variant_entity_1.ProductVariant, { eager: true, nullable: true }),
+    __metadata("design:type", product_variant_entity_1.ProductVariant)
+], CartItem.prototype, "variant", void 0);
 __decorate([
     (0, typeorm_1.Column)('int'),
     __metadata("design:type", Number)

@@ -13,17 +13,25 @@ exports.Product = void 0;
 const typeorm_1 = require("typeorm");
 const enums_1 = require("../../../common/enums");
 const vendor_entity_1 = require("../../auth/entities/vendor.entity");
+const product_variant_entity_1 = require("./product-variant.entity");
 let Product = class Product {
     id;
     name;
+    description;
     price;
-    stock;
     images;
+    attributes;
     is_zoura_mall;
     approval_status;
     vendor;
+    variants;
     created_at;
     updated_at;
+    get totalStock() {
+        if (!this.variants)
+            return 0;
+        return this.variants.reduce((sum, variant) => sum + variant.stock, 0);
+    }
 };
 exports.Product = Product;
 __decorate([
@@ -35,17 +43,21 @@ __decorate([
     __metadata("design:type", String)
 ], Product.prototype, "name", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], Product.prototype, "description", void 0);
+__decorate([
     (0, typeorm_1.Column)({ type: 'decimal', precision: 10, scale: 2 }),
     __metadata("design:type", Number)
 ], Product.prototype, "price", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'int' }),
-    __metadata("design:type", Number)
-], Product.prototype, "stock", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: 'jsonb', default: [] }),
+    (0, typeorm_1.Column)({ type: 'text', array: true, default: '{}' }),
     __metadata("design:type", Array)
 ], Product.prototype, "images", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', default: {} }),
+    __metadata("design:type", Object)
+], Product.prototype, "attributes", void 0);
 __decorate([
     (0, typeorm_1.Column)({ default: false }),
     __metadata("design:type", Boolean)
@@ -62,6 +74,10 @@ __decorate([
     (0, typeorm_1.ManyToOne)(() => vendor_entity_1.Vendor, (vendor) => vendor.products, { nullable: true }),
     __metadata("design:type", vendor_entity_1.Vendor)
 ], Product.prototype, "vendor", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => product_variant_entity_1.ProductVariant, (variant) => variant.product, { cascade: true }),
+    __metadata("design:type", Array)
+], Product.prototype, "variants", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

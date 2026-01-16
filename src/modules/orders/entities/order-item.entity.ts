@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { Order } from './order.entity';
 import { Product } from '../../commerce/entities/product.entity';
+import { ProductVariant } from '../../commerce/entities/product-variant.entity';
 
 @Entity('order_items')
 export class OrderItem {
@@ -19,6 +20,9 @@ export class OrderItem {
     @ManyToOne(() => Product, { eager: true })
     product: Product;
 
+    @ManyToOne(() => ProductVariant, { eager: true, nullable: true })
+    variant: ProductVariant;
+
     @Column('int')
     quantity: number;
 
@@ -28,3 +32,4 @@ export class OrderItem {
     @CreateDateColumn()
     created_at: Date;
 }
+

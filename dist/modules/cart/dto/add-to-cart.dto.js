@@ -13,6 +13,7 @@ exports.AddToCartDto = void 0;
 const class_validator_1 = require("class-validator");
 class AddToCartDto {
     productId;
+    variantId;
     quantity;
 }
 exports.AddToCartDto = AddToCartDto;
@@ -20,6 +21,11 @@ __decorate([
     (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
 ], AddToCartDto.prototype, "productId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], AddToCartDto.prototype, "variantId", void 0);
 __decorate([
     (0, class_validator_1.IsInt)(),
     (0, class_validator_1.Min)(1),

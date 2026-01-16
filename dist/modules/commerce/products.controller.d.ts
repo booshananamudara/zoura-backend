@@ -1,9 +1,10 @@
 import { ProductsService } from './products.service';
-import { CreateProductDto } from './dto/create-product.dto';
+import { CloudinaryService } from '../../common/cloudinary';
 export declare class ProductsController {
     private readonly productsService;
-    constructor(productsService: ProductsService);
-    create(createProductDto: CreateProductDto, req: any): Promise<{
+    private readonly cloudinaryService;
+    constructor(productsService: ProductsService, cloudinaryService: CloudinaryService);
+    create(files: Express.Multer.File[], dataString: string, req: any): Promise<{
         message: string;
         product: import("./entities").Product;
     }>;

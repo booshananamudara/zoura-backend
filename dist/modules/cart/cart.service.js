@@ -19,29 +19,51 @@ const typeorm_2 = require("typeorm");
 const cart_entity_1 = require("./entities/cart.entity");
 const cart_item_entity_1 = require("./entities/cart-item.entity");
 const product_entity_1 = require("../commerce/entities/product.entity");
+const product_variant_entity_1 = require("../commerce/entities/product-variant.entity");
 let CartService = class CartService {
     cartRepository;
     cartItemRepository;
     productRepository;
-    constructor(cartRepository, cartItemRepository, productRepository) {
+    variantRepository;
+    constructor(cartRepository, cartItemRepository, productRepository, variantRepository) {
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.productRepository = productRepository;
+        this.variantRepository = variantRepository;
     }
     async addToCart(user, dto) {
-        const { productId, quantity } = dto;
+        const { productId, variantId, quantity } = dto;
         const product = await this.productRepository.findOne({
             where: { id: productId },
+            relations: ['variants'],
         });
         if (!product) {
             throw new common_1.NotFoundException('Product not found');
         }
-        if (product.stock < quantity) {
-            throw new common_1.BadRequestException(`Insufficient stock. Only ${product.stock} items available.`);
+        let variant = null;
+        let availableStock;
+        if (variantId) {
+            variant = await this.variantRepository.findOne({
+                where: { id: variantId, product: { id: productId } },
+            });
+            if (!variant) {
+                throw new common_1.NotFoundException('Product variant not found');
+            }
+            availableStock = variant.stock;
+        }
+        else if (product.variants && product.variants.length > 0) {
+            variant = product.variants[0];
+            availableStock = variant.stock;
+        }
+        else {
+            availableStock = 0;
+        }
+        if (availableStock < quantity) {
+            throw new common_1.BadRequestException(`Insufficient stock. Only ${availableStock} items available.`);
         }
         let cart = await this.cartRepository.findOne({
             where: { user: { id: user.id } },
-            relations: ['items', 'items.product'],
+            relations: ['items', 'items.product', 'items.variant'],
         });
         if (!cart) {
             cart = this.cartRepository.create({
@@ -51,21 +73,26 @@ let CartService = class CartService {
             });
             await this.cartRepository.save(cart);
         }
-        const existingItem = cart.items.find((item) => item.product.id === productId);
+        const existingItem = cart.items.find((item) => item.product.id === productId &&
+            (item.variant?.id === variant?.id || (!item.variant && !variant)));
         if (existingItem) {
             const newQuantity = existingItem.quantity + quantity;
-            if (product.stock < newQuantity) {
-                throw new common_1.BadRequestException(`Cannot add ${quantity} more. Only ${product.stock - existingItem.quantity} items available.`);
+            if (availableStock < newQuantity) {
+                throw new common_1.BadRequestException(`Cannot add ${quantity} more. Only ${availableStock - existingItem.quantity} items available.`);
             }
             existingItem.quantity = newQuantity;
             await this.cartItemRepository.save(existingItem);
         }
         else {
+            const basePrice = parseFloat(product.price.toString());
+            const priceOverride = variant?.price_override ? parseFloat(variant.price_override.toString()) : 0;
+            const finalPrice = basePrice + priceOverride;
             const cartItem = this.cartItemRepository.create({
                 cart,
                 product,
+                variant: variant || undefined,
                 quantity,
-                price_at_add: parseFloat(product.price.toString()),
+                price_at_add: finalPrice,
             });
             await this.cartItemRepository.save(cartItem);
         }
@@ -89,7 +116,7 @@ let CartService = class CartService {
     async updateCartItem(user, itemId, dto) {
         const cartItem = await this.cartItemRepository.findOne({
             where: { id: itemId },
-            relations: ['cart', 'cart.user', 'product'],
+            relations: ['cart', 'cart.user', 'product', 'variant'],
         });
         if (!cartItem) {
             throw new common_1.NotFoundException('Cart item not found');
@@ -97,8 +124,21 @@ let CartService = class CartService {
         if (cartItem.cart.user.id !== user.id) {
             throw new common_1.BadRequestException('This item does not belong to your cart');
         }
-        if (cartItem.product.stock < dto.quantity) {
-            throw new common_1.BadRequestException(`Insufficient stock. Only ${cartItem.product.stock} items available.`);
+        let availableStock = 0;
+        if (cartItem.variant) {
+            availableStock = cartItem.variant.stock;
+        }
+        else {
+            const product = await this.productRepository.findOne({
+                where: { id: cartItem.product.id },
+                relations: ['variants'],
+            });
+            if (product?.variants && product.variants.length > 0) {
+                availableStock = product.variants[0].stock;
+            }
+        }
+        if (availableStock < dto.quantity) {
+            throw new common_1.BadRequestException(`Insufficient stock. Only ${availableStock} items available.`);
         }
         cartItem.quantity = dto.quantity;
         await this.cartItemRepository.save(cartItem);
@@ -152,7 +192,9 @@ exports.CartService = CartService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(cart_entity_1.Cart)),
     __param(1, (0, typeorm_1.InjectRepository)(cart_item_entity_1.CartItem)),
     __param(2, (0, typeorm_1.InjectRepository)(product_entity_1.Product)),
+    __param(3, (0, typeorm_1.InjectRepository)(product_variant_entity_1.ProductVariant)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository])
 ], CartService);
