@@ -19,6 +19,7 @@ const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const enums_1 = require("../../common/enums");
+const update_post_status_dto_1 = require("./dto/update-post-status.dto");
 let AdminController = class AdminController {
     adminService;
     constructor(adminService) {
@@ -48,16 +49,26 @@ let AdminController = class AdminController {
         return this.adminService.getAllProducts();
     }
     async getPendingVendors() {
-        return this.adminService.getPendingVendors();
+        return this.adminService.getPendingVendorApprovals();
     }
     async getPendingProducts() {
-        return this.adminService.getPendingProducts();
+        return this.adminService.getPendingProductApprovals();
     }
     async rejectProduct(id) {
         const product = await this.adminService.rejectProduct(id);
         return {
             message: 'Product rejected successfully',
             product,
+        };
+    }
+    async getPendingPosts() {
+        return this.adminService.getPendingPosts();
+    }
+    async updatePostStatus(id, dto) {
+        const post = await this.adminService.updatePostStatus(id, dto.status);
+        return {
+            message: `Post ${dto.status.toLowerCase()} successfully`,
+            post,
         };
     }
 };
@@ -113,6 +124,20 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "rejectProduct", null);
+__decorate([
+    (0, common_1.Get)('social/pending'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getPendingPosts", null);
+__decorate([
+    (0, common_1.Patch)('social/:id/status'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, update_post_status_dto_1.UpdatePostStatusDto]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "updatePostStatus", null);
 exports.AdminController = AdminController = __decorate([
     (0, common_1.Controller)('admin'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

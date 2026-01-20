@@ -5,7 +5,8 @@ import { Vendor } from '../auth/entities/vendor.entity';
 import { Product } from '../commerce/entities/product.entity';
 import { ProductVariant } from '../commerce/entities/product-variant.entity';
 import { Order } from '../orders/entities/order.entity';
-import { ApprovalStatus } from '@/common/enums';
+import { Post } from '../social/entities/post.entity';
+import { ApprovalStatus, PostStatus } from '@/common/enums';
 
 export interface LowStockItem {
     id: string;
@@ -35,33 +36,37 @@ export class AdminService {
         private variantRepository: Repository<ProductVariant>,
         @InjectRepository(Order)
         private orderRepository: Repository<Order>,
+        @InjectRepository(Post)
+        private postRepository: Repository<Post>,
     ) { }
 
     /**
      * Get dashboard statistics
-     * @returns Dashboard stats including revenue, orders, vendors, and low stock items
      */
     async getDashboardStats(): Promise<DashboardStats> {
-        // Get total revenue
-        const revenueResult = await this.orderRepository
+        // Get total revenue from all orders
+        const ordersResult = await this.orderRepository
             .createQueryBuilder('order')
             .select('SUM(order.total_amount)', 'total')
             .getRawOne();
-        const totalRevenue = parseFloat(revenueResult?.total || '0');
+        const totalRevenue = parseFloat(ordersResult?.total || '0');
 
         // Get total orders count
         const totalOrders = await this.orderRepository.count();
 
         // Get total vendors count
-        const totalVendors = await this.vendorRepository.count();
-
-        // Get low stock items (stock < 5)
-        const lowStockVariants = await this.variantRepository.find({
-            where: { stock: LessThan(5) },
-            relations: ['product'],
-            order: { stock: 'ASC' },
-            take: 5,
+        const totalVendors = await this.vendorRepository.count({
+            where: { approval_status: ApprovalStatus.APPROVED },
         });
+
+        // Get low stock items (stock < 5) across all vendors
+        const lowStockVariants = await this.variantRepository
+            .createQueryBuilder('variant')
+            .innerJoinAndSelect('variant.product', 'product')
+            .where('variant.stock < :threshold', { threshold: 5 })
+            .orderBy('variant.stock', 'ASC')
+            .take(10)
+            .getMany();
 
         const lowStockItems: LowStockItem[] = lowStockVariants.map(variant => ({
             id: variant.id,
@@ -82,14 +87,52 @@ export class AdminService {
     }
 
     /**
+     * Get all vendors
+     */
+    async getAllVendors(): Promise<Vendor[]> {
+        return this.vendorRepository.find({
+            order: { created_at: 'DESC' },
+        });
+    }
+
+    /**
+     * Get all products
+     */
+    async getAllProducts(): Promise<Product[]> {
+        return this.productRepository.find({
+            relations: ['vendor', 'variants'],
+            order: { created_at: 'DESC' },
+        });
+    }
+
+    /**
+     * Get pending vendor approvals
+     */
+    async getPendingVendorApprovals(): Promise<Vendor[]> {
+        return this.vendorRepository.find({
+            where: { approval_status: ApprovalStatus.PENDING },
+            order: { created_at: 'ASC' },
+        });
+    }
+
+    /**
+     * Get pending product approvals
+     */
+    async getPendingProductApprovals(): Promise<Product[]> {
+        return this.productRepository.find({
+            where: { approval_status: ApprovalStatus.PENDING },
+            relations: ['vendor', 'variants'],
+            order: { created_at: 'ASC' },
+        });
+    }
+
+    /**
      * Approve a vendor
      * @param id - Vendor ID
-     * @returns Updated vendor profile
+     * @returns Updated vendor
      */
     async approveVendor(id: string): Promise<Vendor> {
-        const vendor = await this.vendorRepository.findOne({
-            where: { id },
-        });
+        const vendor = await this.vendorRepository.findOne({ where: { id } });
 
         if (!vendor) {
             throw new NotFoundException('Vendor not found');
@@ -117,59 +160,8 @@ export class AdminService {
 
         product.approval_status = ApprovalStatus.APPROVED;
 
-        return this.productRepository.save(product);
-    }
-
-    /**
-     * Get all vendors
-     * @returns Array of all vendors
-     */
-    async getAllVendors(): Promise<Vendor[]> {
-        return this.vendorRepository.find({
-            order: {
-                created_at: 'DESC',
-            },
-        });
-    }
-
-    /**
-     * Get all products
-     * @returns Array of all products
-     */
-    async getAllProducts(): Promise<Product[]> {
-        return this.productRepository.find({
-            relations: ['vendor'],
-            order: {
-                created_at: 'DESC',
-            },
-        });
-    }
-
-    /**
-     * Get pending vendors (approval_status = PENDING)
-     * @returns Array of vendors pending approval
-     */
-    async getPendingVendors(): Promise<Vendor[]> {
-        return this.vendorRepository.find({
-            where: { approval_status: ApprovalStatus.PENDING },
-            order: {
-                created_at: 'DESC',
-            },
-        });
-    }
-
-    /**
-     * Get pending products (approval_status = PENDING)
-     * @returns Array of products pending approval
-     */
-    async getPendingProducts(): Promise<Product[]> {
-        return this.productRepository.find({
-            where: { approval_status: ApprovalStatus.PENDING },
-            relations: ['vendor'],
-            order: {
-                created_at: 'DESC',
-            },
-        });
+        await this.productRepository.save(product);
+        return product;
     }
 
     /**
@@ -191,5 +183,37 @@ export class AdminService {
 
         return this.productRepository.save(product);
     }
-}
 
+    // =========== SOCIAL MODERATION ===========
+
+    /**
+     * Get all pending social posts awaiting moderation
+     */
+    async getPendingPosts(): Promise<Post[]> {
+        return this.postRepository.find({
+            where: { status: PostStatus.PENDING },
+            order: { created_at: 'ASC' },
+            relations: ['user'],
+        });
+    }
+
+    /**
+     * Update post moderation status
+     * @param postId - Post ID
+     * @param status - New status (APPROVED or REJECTED)
+     */
+    async updatePostStatus(postId: string, status: PostStatus): Promise<Post> {
+        const post = await this.postRepository.findOne({
+            where: { id: postId },
+            relations: ['user'],
+        });
+
+        if (!post) {
+            throw new NotFoundException('Post not found');
+        }
+
+        post.status = status;
+        await this.postRepository.save(post);
+        return post;
+    }
+}

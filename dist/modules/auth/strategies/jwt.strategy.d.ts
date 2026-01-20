@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../auth.service';
 import { VendorAuthService } from '../vendor-auth.service';
 import { AdminAuthService } from '../admin-auth.service';
+import { UserRole } from '@/common/enums';
 declare const JwtStrategy_base: new (...args: [opt: import("passport-jwt").StrategyOptionsWithRequest] | [opt: import("passport-jwt").StrategyOptionsWithoutRequest]) => Strategy & {
     validate(...args: any[]): unknown;
 };
@@ -15,6 +16,12 @@ export declare class JwtStrategy extends JwtStrategy_base {
         id: string;
         email: string;
         role: string;
+    } | {
+        id: string;
+        email: string;
+        name: string;
+        subscription_tier: import("@/common/enums").SubscriptionTier;
+        role: UserRole;
     }>;
 }
 export {};

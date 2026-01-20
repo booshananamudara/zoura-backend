@@ -20,32 +20,38 @@ const vendor_entity_1 = require("../auth/entities/vendor.entity");
 const product_entity_1 = require("../commerce/entities/product.entity");
 const product_variant_entity_1 = require("../commerce/entities/product-variant.entity");
 const order_entity_1 = require("../orders/entities/order.entity");
+const post_entity_1 = require("../social/entities/post.entity");
 const enums_1 = require("../../common/enums");
 let AdminService = class AdminService {
     vendorRepository;
     productRepository;
     variantRepository;
     orderRepository;
-    constructor(vendorRepository, productRepository, variantRepository, orderRepository) {
+    postRepository;
+    constructor(vendorRepository, productRepository, variantRepository, orderRepository, postRepository) {
         this.vendorRepository = vendorRepository;
         this.productRepository = productRepository;
         this.variantRepository = variantRepository;
         this.orderRepository = orderRepository;
+        this.postRepository = postRepository;
     }
     async getDashboardStats() {
-        const revenueResult = await this.orderRepository
+        const ordersResult = await this.orderRepository
             .createQueryBuilder('order')
             .select('SUM(order.total_amount)', 'total')
             .getRawOne();
-        const totalRevenue = parseFloat(revenueResult?.total || '0');
+        const totalRevenue = parseFloat(ordersResult?.total || '0');
         const totalOrders = await this.orderRepository.count();
-        const totalVendors = await this.vendorRepository.count();
-        const lowStockVariants = await this.variantRepository.find({
-            where: { stock: (0, typeorm_2.LessThan)(5) },
-            relations: ['product'],
-            order: { stock: 'ASC' },
-            take: 5,
+        const totalVendors = await this.vendorRepository.count({
+            where: { approval_status: enums_1.ApprovalStatus.APPROVED },
         });
+        const lowStockVariants = await this.variantRepository
+            .createQueryBuilder('variant')
+            .innerJoinAndSelect('variant.product', 'product')
+            .where('variant.stock < :threshold', { threshold: 5 })
+            .orderBy('variant.stock', 'ASC')
+            .take(10)
+            .getMany();
         const lowStockItems = lowStockVariants.map(variant => ({
             id: variant.id,
             sku: variant.sku,
@@ -62,10 +68,32 @@ let AdminService = class AdminService {
             lowStockItems,
         };
     }
-    async approveVendor(id) {
-        const vendor = await this.vendorRepository.findOne({
-            where: { id },
+    async getAllVendors() {
+        return this.vendorRepository.find({
+            order: { created_at: 'DESC' },
         });
+    }
+    async getAllProducts() {
+        return this.productRepository.find({
+            relations: ['vendor', 'variants'],
+            order: { created_at: 'DESC' },
+        });
+    }
+    async getPendingVendorApprovals() {
+        return this.vendorRepository.find({
+            where: { approval_status: enums_1.ApprovalStatus.PENDING },
+            order: { created_at: 'ASC' },
+        });
+    }
+    async getPendingProductApprovals() {
+        return this.productRepository.find({
+            where: { approval_status: enums_1.ApprovalStatus.PENDING },
+            relations: ['vendor', 'variants'],
+            order: { created_at: 'ASC' },
+        });
+    }
+    async approveVendor(id) {
+        const vendor = await this.vendorRepository.findOne({ where: { id } });
         if (!vendor) {
             throw new common_1.NotFoundException('Vendor not found');
         }
@@ -81,39 +109,8 @@ let AdminService = class AdminService {
             throw new common_1.NotFoundException('Product not found');
         }
         product.approval_status = enums_1.ApprovalStatus.APPROVED;
-        return this.productRepository.save(product);
-    }
-    async getAllVendors() {
-        return this.vendorRepository.find({
-            order: {
-                created_at: 'DESC',
-            },
-        });
-    }
-    async getAllProducts() {
-        return this.productRepository.find({
-            relations: ['vendor'],
-            order: {
-                created_at: 'DESC',
-            },
-        });
-    }
-    async getPendingVendors() {
-        return this.vendorRepository.find({
-            where: { approval_status: enums_1.ApprovalStatus.PENDING },
-            order: {
-                created_at: 'DESC',
-            },
-        });
-    }
-    async getPendingProducts() {
-        return this.productRepository.find({
-            where: { approval_status: enums_1.ApprovalStatus.PENDING },
-            relations: ['vendor'],
-            order: {
-                created_at: 'DESC',
-            },
-        });
+        await this.productRepository.save(product);
+        return product;
     }
     async rejectProduct(id) {
         const product = await this.productRepository.findOne({
@@ -126,6 +123,25 @@ let AdminService = class AdminService {
         product.approval_status = enums_1.ApprovalStatus.REJECTED;
         return this.productRepository.save(product);
     }
+    async getPendingPosts() {
+        return this.postRepository.find({
+            where: { status: enums_1.PostStatus.PENDING },
+            order: { created_at: 'ASC' },
+            relations: ['user'],
+        });
+    }
+    async updatePostStatus(postId, status) {
+        const post = await this.postRepository.findOne({
+            where: { id: postId },
+            relations: ['user'],
+        });
+        if (!post) {
+            throw new common_1.NotFoundException('Post not found');
+        }
+        post.status = status;
+        await this.postRepository.save(post);
+        return post;
+    }
 };
 exports.AdminService = AdminService;
 exports.AdminService = AdminService = __decorate([
@@ -134,7 +150,9 @@ exports.AdminService = AdminService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(product_entity_1.Product)),
     __param(2, (0, typeorm_1.InjectRepository)(product_variant_entity_1.ProductVariant)),
     __param(3, (0, typeorm_1.InjectRepository)(order_entity_1.Order)),
+    __param(4, (0, typeorm_1.InjectRepository)(post_entity_1.Post)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository])
